@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "If you use or adapt LDTMP, please cite it as below."
+title: "LDTMP: Layered Depth Tension Modulation Protocol"
+version: "1.0"
+date-released: 2026-10-23
+license: CC-BY-4.0
+type: software
+authors:
+  - family-names: Milovidov
+    given-names: Alexander
+repository-code: "https://github.com/amilovidov/ldtmp"
+abstract: >-
+  A protocol for pacing the emotional depth of a conversation between a person
+  and an AI interviewer, using six layers, deterministic transition rules and a
+  safety gate. Code decides the layer and the language model writes within it.
+keywords:
+  - conversational AI
+  - LLM agents
+  - conversation design
+  - engagement signals
