@@ -49,9 +49,9 @@ def text(x, y, s, c, size=14, anchor="middle", color=None, weight=400):
 
 def figure1(c):
     """The six layers placed by intensity, so the arc is visible as a shape."""
-    w, h = 1280, 400
-    node_w, node_h = 156, 42
-    xs = [178 + i * 196 for i in range(6)]
+    w, h = 1320, 400
+    node_w, node_h = 176, 46
+    xs = [188 + i * 206 for i in range(6)]
     level_y = {"light": 70, "moderate": 175, "deep": 280}
     layers = [
         ("Icebreaker", "light"), ("Surface", "light"),
@@ -69,7 +69,7 @@ def figure1(c):
     for name, y in level_y.items():
         p.append(f'<line x1="56" y1="{y}" x2="{w - 24}" y2="{y}" stroke="{c["guide"]}" '
                  f'stroke-width="1" stroke-dasharray="2 5"/>')
-        p.append(text(24, y, name, c, size=12, anchor="start", color=c["muted"]))
+        p.append(text(24, y, name, c, size=14, anchor="start", color=c["muted"]))
 
     def edge(i, j, kind):
         """Same level: straight. Level change: one bend, forward on the outer corner."""
@@ -106,19 +106,19 @@ def figure1(c):
         y = level_y[level]
         p.append(f'<rect x="{x - node_w / 2}" y="{y - node_h / 2}" width="{node_w}" '
                  f'height="{node_h}" rx="21" fill="{fill}" stroke="{stroke}" stroke-width="1"/>')
-        p.append(text(x, y, label, c, color=tc, weight=500))
+        p.append(text(x, y, label, c, size=16, color=tc, weight=500))
 
     ly = 362
     items = [("gated", "forward, safety gate applies"),
              ("forward", "forward, no gate"), ("retreat", "retreat")]
-    x = 380
+    x = 360
     for kind, label in items:
         width = {"gated": 2.4, "forward": 1.6, "retreat": 1.3}[kind]
         dash = ' stroke-dasharray="5 4"' if kind == "retreat" else ""
         p.append(f'<line x1="{x}" y1="{ly}" x2="{x + 34}" y2="{ly}" stroke="{c[kind]}" '
                  f'stroke-width="{width}"{dash} marker-end="url(#a-{kind})"/>')
-        p.append(text(x + 44, ly, label, c, size=12, anchor="start", color=c["muted"]))
-        x += 44 + len(label) * 6.6 + 40
+        p.append(text(x + 44, ly, label, c, size=14, anchor="start", color=c["muted"]))
+        x += 44 + len(label) * 7.6 + 44
     p.append("</svg>")
     return "\n".join(p)
 
@@ -150,7 +150,7 @@ def arrow(d, c, kind="forward"):
 
 
 def label(x, y, s, c):
-    return text(x, y, s, c, size=12, color=c["muted"])
+    return text(x, y, s, c, size=13, color=c["muted"])
 
 
 def figure2(c):
