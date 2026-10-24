@@ -43,12 +43,13 @@ body = escape_prose(body)
 
 front = f'''---
 title: "LDTMP: A Layered Depth Tension Modulation Protocol"
-description: "A protocol that paces emotional depth in AI-led conversations. Deterministic rules choose the layer, and the language model writes inside it."
-status: "Published"
+description: "LDTMP paces emotional depth in AI-led conversations. Deterministic rules decide how personal the next question may be, and the language model writes the question within that limit."
+status: "Technical report"
 ---
 
-*Technical report, Specification 1.0, {date}. Alexander Milovidov, independent researcher.*
-*[Download the PDF](/papers/ldtmp.pdf). Source, constants and license on [GitHub]({REPO}). CC BY 4.0.*
+*Alexander Milovidov, independent researcher. Specification 1.0, {date}.*
+
+The paper is also available as a [PDF](/papers/ldtmp.pdf). The source, the constants and the CC BY 4.0 license are on [GitHub]({REPO}).
 
 '''
 
