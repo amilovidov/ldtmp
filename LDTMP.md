@@ -51,7 +51,7 @@ Social penetration theory describes relationships as deepening through a gradual
 
 ### 2.2 Pacing in narrative and motivational practice
 
-Narrative practice treats the stories people tell about their experiences as material to explore and re-author, and it moves from the account of events toward their meaning (White & Epston, 1990). Motivational interviewing emphasizes following the person's lead, evoking their own perspective and adjusting pace to their readiness (Miller & Rollnick, 2012). LDTMP borrows the pacing discipline from both traditions. Their clinical aims are out of scope. Its descent from the peak through a relief layer to a forward-looking close reflects the shared view that a conversation which reaches difficult material should not end there.
+Narrative practice treats the stories people tell about their experiences as material to explore and re-author, and it moves from the account of events toward their meaning (White & Epston, 1990). Motivational interviewing emphasizes following the person's lead, evoking their own perspective and adjusting pace to their readiness (Miller & Rollnick, 2013). LDTMP borrows the pacing discipline from both traditions. Their clinical aims are out of scope. Its descent from the peak through a relief layer to a forward-looking close reflects the shared view that a conversation which reaches difficult material should not end there.
 
 ### 2.3 Behavioral signals of engagement
 
@@ -91,6 +91,26 @@ The layers form an arc that rises and comes back down. The sequence order in Tab
 | 5 | `REENTRY` | light | Close the conversation and look forward. |
 
 The "tension modulation" in the protocol's name refers to this shape. Tension rises through layers 0 to 3 and resolves through layers 4 and 5. The protocol treats the resolution as mandatory. A conversation that reaches layer 3 and stops there leaves the person at the heaviest point of the session.
+
+Figure 1 shows the arc as a state machine. Forward moves advance one layer at a time, and the safety gate covers the three moves before the peak. Each retreat rule in Table 4 steps back one layer, and the structural rule in Section 3.6.2 also permits longer backward jumps.
+
+```mermaid
+stateDiagram-v2
+    direction LR
+    [*] --> ICEBREAKER
+    ICEBREAKER --> SURFACE: forward, gated
+    SURFACE --> INITIAL_DESCENT: forward, gated
+    INITIAL_DESCENT --> EMOTIONAL_SATURATION: forward, gated
+    EMOTIONAL_SATURATION --> RELIEF_ARC: forward
+    RELIEF_ARC --> REENTRY: forward
+    SURFACE --> ICEBREAKER: retreat
+    INITIAL_DESCENT --> SURFACE: retreat
+    EMOTIONAL_SATURATION --> INITIAL_DESCENT: retreat
+    RELIEF_ARC --> EMOTIONAL_SATURATION: retreat
+    REENTRY --> RELIEF_ARC: retreat
+```
+
+**Figure 1.** The six layers as a state machine, with forward moves, retreat moves and the three transitions the safety gate covers.
 
 ### 3.3 Generation constraints per layer
 
@@ -224,6 +244,32 @@ The safety threshold is 0.5. Implementations MAY make it configurable.
 ### 3.6 The layer decision
 
 The orchestrator calls the layer decision once per user turn, after it has computed the signals and before it builds the generation prompt.
+
+Figure 2 traces one turn through the protocol. The controller settles the layer before the model writes anything, and the model's output is checked against that layer before the person sees it.
+
+```mermaid
+flowchart TD
+    A[User response] --> B[Compute signals, Section 3.4]
+    B --> C[Readiness and safety scores, Section 3.5]
+    C --> D{Transition rule matches? Table 4}
+    D -- no --> S[Stay in current layer]
+    D -- yes --> E{Descending move?}
+    E -- no --> T[Transition to target layer]
+    E -- yes --> F{Safety below 0.5?}
+    F -- yes --> V[Veto: stay in current layer]
+    F -- no --> T
+    S --> G[Update session state, exchange_count + 1]
+    V --> G
+    T --> G
+    G --> H[Build prompt with the layer constraints, Table 2]
+    H --> I[Model writes one question]
+    I --> J{Question fits the layer?}
+    J -- yes --> K[Ask the question]
+    J -- no --> R[Regenerate once]
+    R --> K
+```
+
+**Figure 2.** One turn of the protocol, from the user's response through the layer decision and safety gate to question generation and validation.
 
 #### 3.6.1 Session state
 
@@ -457,7 +503,7 @@ LDTMP gives a language-model interviewer an explicit, auditable notion of conver
 
 ## References
 
-Altman, I., & Taylor, D. A. (1973). *Social penetration: The development of interpersonal relationships.* Holt, Rinehart & Winston.
+Altman, I., & Taylor, D. A. (1973). *Social penetration: The development of interpersonal relationships.* Holt, Rinehart & Winston. ISBN 978-0-03-076635-0
 
 Aron, A., Melinat, E., Aron, E. N., Vallone, R. D., & Bator, R. J. (1997). The experimental generation of interpersonal closeness: A procedure and some preliminary findings. *Personality and Social Psychology Bulletin, 23*(4), 363-377. https://doi.org/10.1177/0146167297234003
 
@@ -467,7 +513,7 @@ Clark, H. H., & Fox Tree, J. E. (2002). Using uh and um in spontaneous speaking.
 
 Gonzales, A. L., Hancock, J. T., & Pennebaker, J. W. (2010). Language style matching as a predictor of social dynamics in small groups. *Communication Research, 37*(1), 3-19. https://doi.org/10.1177/0093650209351468
 
-Miller, W. R., & Rollnick, S. (2012). *Motivational interviewing: Helping people change* (3rd ed.). Guilford Press.
+Miller, W. R., & Rollnick, S. (2013). *Motivational interviewing: Helping people change* (3rd ed.). Guilford Press. ISBN 978-1-60918-227-4
 
 Russell, J. A. (1980). A circumplex model of affect. *Journal of Personality and Social Psychology, 39*(6), 1161-1178. https://doi.org/10.1037/h0077714
 
@@ -475,7 +521,7 @@ Sacks, H., Schegloff, E. A., & Jefferson, G. (1974). A simplest systematics for 
 
 Sharma, M., Tong, M., Korbak, T., Duvenaud, D., Askell, A., Bowman, S. R., et al. (2023). *Towards understanding sycophancy in language models* (arXiv:2310.13548). arXiv. https://doi.org/10.48550/arXiv.2310.13548
 
-White, M., & Epston, D. (1990). *Narrative means to therapeutic ends.* W. W. Norton.
+White, M., & Epston, D. (1990). *Narrative means to therapeutic ends.* W. W. Norton. ISBN 978-0-393-70098-5
 
 ## Appendix A. Machine-readable constants
 
