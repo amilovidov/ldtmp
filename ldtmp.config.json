@@ -6,68 +6,202 @@
       "id": "ICEBREAKER",
       "index": 0,
       "intensity": "light",
-      "question_words": [8, 20],
-      "recommended_topics": ["current_moment", "simple_facts", "welcoming", "light_preferences", "recent_activities"],
-      "avoid_topics": ["trauma", "loss", "deep_relationships", "existential_questions", "heavy_emotions", "vulnerability"],
+      "question_words": [
+        8,
+        20
+      ],
+      "recommended_topics": [
+        "current_moment",
+        "simple_facts",
+        "welcoming",
+        "light_preferences",
+        "recent_activities"
+      ],
+      "avoid_topics": [
+        "trauma",
+        "loss",
+        "deep_relationships",
+        "existential_questions",
+        "heavy_emotions",
+        "vulnerability"
+      ],
       "tone": "A warm greeting and one natural question, like catching up with a friend."
     },
     {
       "id": "SURFACE",
       "index": 1,
       "intensity": "light",
-      "question_words": [10, 25],
-      "recommended_topics": ["daily_life", "hobbies", "interests", "work_overview", "family_basics", "recent_experiences"],
-      "avoid_topics": ["trauma", "loss", "deep_fears", "existential_crisis", "intense_emotions"],
+      "question_words": [
+        10,
+        25
+      ],
+      "recommended_topics": [
+        "daily_life",
+        "hobbies",
+        "interests",
+        "work_overview",
+        "family_basics",
+        "recent_experiences"
+      ],
+      "avoid_topics": [
+        "trauma",
+        "loss",
+        "deep_fears",
+        "existential_crisis",
+        "intense_emotions"
+      ],
       "tone": "React warmly to the answer, then ask one curious follow-up."
     },
     {
       "id": "INITIAL_DESCENT",
       "index": 2,
       "intensity": "moderate",
-      "question_words": [12, 20],
-      "recommended_topics": ["meaningful_relationships", "personal_values", "life_choices", "challenges_faced", "growth_moments", "important_events"],
-      "avoid_topics": ["deep_trauma", "unresolved_grief", "existential_dread", "profound_loss"],
+      "question_words": [
+        12,
+        20
+      ],
+      "recommended_topics": [
+        "meaningful_relationships",
+        "personal_values",
+        "life_choices",
+        "challenges_faced",
+        "growth_moments",
+        "important_events"
+      ],
+      "avoid_topics": [
+        "deep_trauma",
+        "unresolved_grief",
+        "existential_dread",
+        "severe_loss"
+      ],
       "tone": "Thoughtful and concise. One meaningful question."
     },
     {
       "id": "EMOTIONAL_SATURATION",
       "index": 3,
       "intensity": "deep",
-      "question_words": [18, 28],
-      "recommended_topics": ["deep_emotions", "vulnerability", "fears", "regrets", "profound_experiences", "turning_points", "inner_conflicts"],
-      "avoid_topics": ["topics_requiring_professional_help"],
+      "question_words": [
+        18,
+        28
+      ],
+      "recommended_topics": [
+        "deep_emotions",
+        "vulnerability",
+        "fears",
+        "regrets",
+        "profound_experiences",
+        "turning_points",
+        "inner_conflicts"
+      ],
+      "avoid_topics": [
+        "topics_requiring_professional_help"
+      ],
       "tone": "Deeply attentive. One question. Hold space and do not interrogate."
     },
     {
       "id": "RELIEF_ARC",
       "index": 4,
       "intensity": "moderate",
-      "question_words": [12, 20],
-      "recommended_topics": ["resilience", "lessons_learned", "silver_linings", "strength_discovered", "perspective_gained", "growth_from_challenge"],
-      "avoid_topics": ["reopening_fresh_wounds", "minimizing_pain", "forced_positivity"],
+      "question_words": [
+        12,
+        20
+      ],
+      "recommended_topics": [
+        "resilience",
+        "lessons_learned",
+        "silver_linings",
+        "strength_discovered",
+        "perspective_gained",
+        "growth_from_challenge"
+      ],
+      "avoid_topics": [
+        "reopening_fresh_wounds",
+        "minimizing_pain",
+        "forced_positivity"
+      ],
       "tone": "Supportive and balanced. Acknowledge the difficulty without minimizing it."
     },
     {
       "id": "REENTRY",
       "index": 5,
       "intensity": "light",
-      "question_words": [10, 18],
-      "recommended_topics": ["future_outlook", "next_steps", "positive_connections", "integration", "moving_forward", "grounding"],
-      "avoid_topics": ["deep_emotional_topics", "unresolved_issues", "heavy_subjects"],
+      "question_words": [
+        10,
+        18
+      ],
+      "recommended_topics": [
+        "future_outlook",
+        "next_steps",
+        "positive_connections",
+        "integration",
+        "moving_forward",
+        "grounding"
+      ],
+      "avoid_topics": [
+        "deep_emotional_topics",
+        "unresolved_issues",
+        "heavy_subjects"
+      ],
       "tone": "Warm and grounding. One forward-looking question."
     }
   ],
   "engagement_levels": [
-    { "id": "DISENGAGED", "rank": 0, "score_max": 0.2 },
-    { "id": "SHOWING_FATIGUE", "rank": 1, "score_max": 0.4 },
-    { "id": "MODERATE", "rank": 2, "score_max": 0.6 },
-    { "id": "ENGAGED", "rank": 3, "score_max": 0.8 },
-    { "id": "HIGHLY_ENGAGED", "rank": 4, "score_max": 1.0 }
+    {
+      "id": "DISENGAGED",
+      "rank": 0,
+      "score_max": 0.2
+    },
+    {
+      "id": "SHOWING_FATIGUE",
+      "rank": 1,
+      "score_max": 0.4
+    },
+    {
+      "id": "MODERATE",
+      "rank": 2,
+      "score_max": 0.6
+    },
+    {
+      "id": "ENGAGED",
+      "rank": 3,
+      "score_max": 0.8
+    },
+    {
+      "id": "HIGHLY_ENGAGED",
+      "rank": 4,
+      "score_max": 1.0
+    }
   ],
   "engagement_score": {
     "base": 0.2,
-    "length_points": [{ "min_words": 50, "points": 0.3 }, { "min_words": 30, "points": 0.2 }, { "min_words": 15, "points": 0.1 }],
-    "latency_points": [{ "max_seconds": 5, "points": 0.2 }, { "max_seconds": 15, "points": 0.15 }, { "max_seconds": 30, "points": 0.1 }],
+    "length_points": [
+      {
+        "min_words": 50,
+        "points": 0.3
+      },
+      {
+        "min_words": 30,
+        "points": 0.2
+      },
+      {
+        "min_words": 15,
+        "points": 0.1
+      }
+    ],
+    "latency_points": [
+      {
+        "max_seconds": 5,
+        "points": 0.2
+      },
+      {
+        "max_seconds": 15,
+        "points": 0.15
+      },
+      {
+        "max_seconds": 30,
+        "points": 0.1
+      }
+    ],
     "vocabulary_weight": 0.2,
     "vocabulary_unique_words_for_full": 20,
     "emotional_weight": 0.1,
@@ -83,20 +217,49 @@
     "straight_line_last_n": 3,
     "straight_line_max_words": 5
   },
-  "response_quality": { "minimal_below_words": 10, "detailed_from_words": 30 },
+  "response_quality": {
+    "minimal_below_words": 10,
+    "detailed_from_words": 30
+  },
   "topic_depth": {
     "deep_min_words_exclusive": 40,
     "moderate_min_words_exclusive": 20,
-    "score": { "shallow": 0.2, "moderate": 0.5, "deep": 0.8 }
+    "score": {
+      "shallow": 0.2,
+      "moderate": 0.5,
+      "deep": 0.8
+    }
   },
-  "emotional_expression": { "marker_points": 0.1, "marker_max": 0.5, "stage_direction_points": 0.15, "stage_direction_max": 0.3, "ellipsis_points": 0.1, "exclamation_points": 0.05, "exclamation_max": 0.15 },
-  "rhythm": { "natural_cycle_minutes": 3, "fatigue_cycle_minutes": 6 },
-  "intervention": { "engagement_below": 0.4, "natural_cycle_engagement_below": 0.6 },
+  "emotional_expression": {
+    "marker_points": 0.1,
+    "marker_max": 0.5,
+    "stage_direction_points": 0.15,
+    "stage_direction_max": 0.3,
+    "ellipsis_points": 0.1,
+    "exclamation_points": 0.05,
+    "exclamation_max": 0.15
+  },
+  "rhythm": {
+    "natural_cycle_minutes": 3,
+    "fatigue_cycle_minutes": 6
+  },
+  "intervention": {
+    "engagement_below": 0.4,
+    "natural_cycle_engagement_below": 0.6
+  },
   "readiness": {
     "engagement_weight": 0.4,
-    "quality_points": { "detailed": 0.2, "moderate": 0.1, "minimal": 0 },
+    "quality_points": {
+      "detailed": 0.2,
+      "moderate": 0.1,
+      "minimal": 0
+    },
     "emotional_expression_weight": 0.2,
-    "depth_points": { "deep": 0.2, "moderate": 0.1, "shallow": 0 }
+    "depth_points": {
+      "deep": 0.2,
+      "moderate": 0.1,
+      "shallow": 0
+    }
   },
   "safety": {
     "threshold": 0.5,
@@ -109,10 +272,17 @@
     "low_readiness_below": 0.4,
     "penalty_should_intervene": 0.3,
     "bonus_highly_engaged": 0.2,
-    "gated_targets": ["SURFACE", "INITIAL_DESCENT", "EMOTIONAL_SATURATION"],
-    "veto_confidence": 0.9
+    "gated_targets": [
+      "SURFACE",
+      "INITIAL_DESCENT",
+      "EMOTIONAL_SATURATION"
+    ],
+    "veto_confidence": 0.9,
+    "round_to_decimals": 2
   },
-  "icebreaker": { "exchange_cap": 2 },
+  "icebreaker": {
+    "exchange_cap": 2
+  },
   "min_time_in_layer_ms": {
     "SURFACE": 60000,
     "INITIAL_DESCENT": 120000,
@@ -124,5 +294,177 @@
     "INITIAL_DESCENT_to_EMOTIONAL_SATURATION": 0.6,
     "EMOTIONAL_SATURATION_to_RELIEF_ARC": 0.8,
     "EMOTIONAL_SATURATION_retreat_below": 0.3
-  }
+  },
+  "history_window": 20,
+  "generation": {
+    "max_regenerations": 1,
+    "questions_per_turn": 1
+  },
+  "transitions": [
+    {
+      "from": "ICEBREAKER",
+      "rule": "exchange_cap",
+      "when": {
+        "exchange_count_min": 2
+      },
+      "to": "SURFACE",
+      "confidence": 1.0
+    },
+    {
+      "from": "ICEBREAKER",
+      "rule": "fast_track",
+      "when": {
+        "engagement_eq": "HIGHLY_ENGAGED",
+        "quality_eq": "detailed"
+      },
+      "to": "SURFACE",
+      "confidence": 0.95
+    },
+    {
+      "from": "ICEBREAKER",
+      "rule": "warmed_up",
+      "when": {
+        "exchange_count_min": 1,
+        "engagement_min": "MODERATE"
+      },
+      "to": "SURFACE",
+      "confidence": 0.85
+    },
+    {
+      "from": "ICEBREAKER",
+      "rule": "stay",
+      "to": null,
+      "confidence": 0.8
+    },
+    {
+      "from": "SURFACE",
+      "rule": "advance",
+      "when": {
+        "time_in_layer_ms_gt": 60000,
+        "engagement_min": "MODERATE",
+        "depth_min": 0.3
+      },
+      "to": "INITIAL_DESCENT",
+      "confidence": 0.8
+    },
+    {
+      "from": "SURFACE",
+      "rule": "retreat",
+      "when": {
+        "engagement_eq": "DISENGAGED",
+        "quality_eq": "minimal"
+      },
+      "to": "ICEBREAKER",
+      "confidence": 0.7
+    },
+    {
+      "from": "SURFACE",
+      "rule": "stay",
+      "to": null,
+      "confidence": 0.75
+    },
+    {
+      "from": "INITIAL_DESCENT",
+      "rule": "advance",
+      "when": {
+        "time_in_layer_ms_gt": 120000,
+        "engagement_eq": "HIGHLY_ENGAGED",
+        "depth_min": 0.6
+      },
+      "to": "EMOTIONAL_SATURATION",
+      "confidence": 0.85
+    },
+    {
+      "from": "INITIAL_DESCENT",
+      "rule": "retreat",
+      "when": {
+        "engagement_eq": "DISENGAGED",
+        "quality_eq": "minimal"
+      },
+      "to": "SURFACE",
+      "confidence": 0.75
+    },
+    {
+      "from": "INITIAL_DESCENT",
+      "rule": "stay",
+      "to": null,
+      "confidence": 0.8
+    },
+    {
+      "from": "EMOTIONAL_SATURATION",
+      "rule": "advance",
+      "when": {
+        "time_in_layer_ms_gt": 180000,
+        "engagement_eq": "HIGHLY_ENGAGED",
+        "depth_min": 0.8
+      },
+      "to": "RELIEF_ARC",
+      "confidence": 0.9
+    },
+    {
+      "from": "EMOTIONAL_SATURATION",
+      "rule": "retreat",
+      "when": {
+        "engagement_max": "MODERATE",
+        "any": [
+          {
+            "quality_eq": "minimal"
+          },
+          {
+            "depth_lt": 0.3
+          }
+        ]
+      },
+      "to": "INITIAL_DESCENT",
+      "confidence": 0.8
+    },
+    {
+      "from": "EMOTIONAL_SATURATION",
+      "rule": "stay",
+      "to": null,
+      "confidence": 0.85
+    },
+    {
+      "from": "RELIEF_ARC",
+      "rule": "advance",
+      "when": {
+        "time_in_layer_ms_gt": 60000,
+        "engagement_min": "MODERATE"
+      },
+      "to": "REENTRY",
+      "confidence": 0.85
+    },
+    {
+      "from": "RELIEF_ARC",
+      "rule": "disengaged_close",
+      "when": {
+        "engagement_eq": "DISENGAGED",
+        "quality_eq": "minimal"
+      },
+      "to": "REENTRY",
+      "confidence": 0.75
+    },
+    {
+      "from": "RELIEF_ARC",
+      "rule": "stay",
+      "to": null,
+      "confidence": 0.8
+    },
+    {
+      "from": "REENTRY",
+      "rule": "offer_to_end",
+      "when": {
+        "engagement_eq": "DISENGAGED",
+        "quality_eq": "minimal"
+      },
+      "to": null,
+      "confidence": 0.8
+    },
+    {
+      "from": "REENTRY",
+      "rule": "stay",
+      "to": null,
+      "confidence": 0.95
+    }
+  ]
 }

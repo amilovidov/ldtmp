@@ -99,7 +99,8 @@ def figure1(c):
 
     for i in range(5):
         p.append(edge(i, i + 1, "gated" if i < 3 else "forward"))
-        p.append(edge(i + 1, i, "retreat"))
+        if i < 3:  # no retreats after the peak
+            p.append(edge(i + 1, i, "retreat"))
 
     for (label, level), x in zip(layers, xs):
         fill, stroke, tc = style[level]

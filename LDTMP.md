@@ -12,7 +12,7 @@ Independent researcher
 
 ## Abstract
 
-AI interviewers built on large language models can hold fluent conversations, yet they have no principled way to decide how personal a conversation should become or when. When the model itself is left to judge a person's readiness for deeper questions, it tends to agree with whatever direction the conversation is already taking. This report specifies LDTMP, a protocol that moves that decision out of the model. LDTMP defines six conversation layers that rise from rapport to the most personal material and then descend to a forward-looking close. Deterministic rules move a session between layers using behavioral signals computed from each response: length, latency, vocabulary diversity, emotional expression and trends across the session. A safety gate can veto any move toward greater depth. The model writes one question at a time inside constraints set by the current layer. The report gives the complete rule set and its constants, proves a bound on when the safety gate can bind, and presents three worked examples that serve as test vectors. It also documents three defects found in the first production implementation, together with the conformance tests that catch them. LDTMP has not been empirically evaluated, and its thresholds are hand-tuned starting values.
+AI interviewers built on large language models can hold fluent conversations, yet they have no principled way to decide how personal a conversation should become or when. Research on sycophancy suggests that a model left to judge a person's readiness for deeper questions will tend to agree with the direction the conversation already has (Section 2.4). This report specifies LDTMP, a protocol that moves that decision out of the model. LDTMP defines six conversation layers that deepen from rapport to the most personal material and then lighten toward a forward-looking close. Deterministic rules move a session between layers using behavioral signals computed from each response: length, latency, vocabulary diversity, emotional expression and trends across the session. A safety gate can veto any move into a deeper layer. The model writes one question at a time inside constraints set by the current layer. The report gives the full rule set and its constants, proves that the safety gate can bind only at the icebreaker's exchange cap, and works three examples through the formulas. It also documents three defects found in the first production implementation and the tests that catch them. An internal benchmark of that implementation was inconclusive, so LDTMP remains unevaluated, and its thresholds are hand-tuned starting values.
 
 **Keywords:** conversational agents, large language models, conversation design, self-disclosure, engagement signals, AI interviewers
 
@@ -20,48 +20,48 @@ AI interviewers built on large language models can hold fluent conversations, ye
 
 ## 1. Introduction
 
-An interview has a shape. Skilled interviewers open with easy questions, build rapport, move toward the material that matters, and close in a way that leaves the other person steady. Journalists, oral historians, coaches and user researchers all learn some version of this arc. They also learn to read when the other person is not ready to go further, and to step back.
+An interview has a shape. Skilled interviewers open with easy questions, build rapport, move toward the material that matters, and close in a way that leaves the other person steady. They also read when the other person is not ready to go further, and they step back.
 
-Language-model interviewers reproduce the surface of this skill without its structure. A model prompted to "go deeper when appropriate" decides depth implicitly, one turn at a time, with no persistent state and no record of why it chose. Two failures follow from that design. A model can push a disengaged person toward heavy topics because the prompt invited depth, and it can stay at small talk for an entire session because nothing required it to advance. Neither failure is visible after the fact, because the decision was never made explicitly.
+Language-model interviewers reproduce the surface of this skill without its structure. A model prompted to "go deeper when appropriate" decides depth implicitly, one turn at a time, with no explicit state and no record of why it chose. Two failures follow from that design. A model can push a disengaged person toward heavy topics because the prompt invited depth, and it can stay at small talk for an entire session because nothing required it to advance. Neither failure is visible after the fact, because the decision was never made explicitly.
 
-LDTMP addresses this with a separation of responsibilities. A deterministic controller holds the conversation's position in a fixed six-layer arc and moves it only when measured signals satisfy explicit rules. The language model receives the current layer's constraints with every request and writes within them. The protocol was first built for a voice-first app that interviews people about their memories and turns those conversations into written stories, and it ran in production in that app.
+LDTMP splits the work in two. A deterministic controller holds the conversation's position in a fixed six-layer arc and moves it only when measured signals satisfy explicit rules. The language model receives the current layer's constraints with every request and writes within them. The protocol was first built for a voice-first app that interviews people about their memories and turns those conversations into written stories, and it ran in production in that app.
 
 This report makes four contributions:
 
-1. A complete, implementable specification of the six layers, their generation constraints, the signal formulas, the transition rules and the safety gate, with every constant published in machine-readable form.
-2. A short analysis of the protocol's properties. It proves that the safety gate binds in exactly one situation when signals are derived as specified.
-3. Three worked examples, computed from the formulas, that implementations can use as conformance tests.
+1. A specification, detailed enough to implement, of the six layers, their generation constraints, the signal formulas, the transition rules and the safety gate, with every constant published in machine-readable form.
+2. A short analysis of the protocol's properties. It proves that, when signals are derived as specified, the safety gate can bind in only one situation, and Example B shows that it does.
+3. Three worked examples, computed from the formulas, that implementations can check their arithmetic against.
 4. A record of three defects from the first production implementation and the tests that catch them.
 
 ### 1.1 Scope and non-clinical status
 
-LDTMP is a conversation-design protocol. Nobody has validated it as therapy or as a clinical intervention, and it makes no claim to be either. Some layer names borrow vocabulary from narrative practice, and several of the cited sources come from counseling research. That borrowing describes pacing only.
+LDTMP is a conversation-design protocol. I have not validated it as therapy or as a clinical intervention, and it makes no claim to be either. Several of the cited sources come from counseling research, and LDTMP borrows only their approach to pacing.
 
 The safety score in this specification is a pacing control. It keeps the system from pushing a disengaged person toward heavier topics. It does not detect crisis, self-harm risk or distress, and an implementation must not present it as doing so. Any product that may meet people in distress needs a separate, purpose-built escalation path.
 
 ### 1.2 Conventions
 
-The key words MUST, MUST NOT, SHOULD and MAY follow RFC 2119. Every numeric constant in this report also appears in [`ldtmp.config.json`](ldtmp.config.json), and an agent implementing the protocol should load every number from that file. Times are in milliseconds unless a unit is stated. Scores are real numbers clamped to the closed interval [0, 1].
+The key words MUST, MUST NOT, SHOULD and MAY follow RFC 2119. Every numeric constant in this report, including the transition rules of Table 4, also appears in [`ldtmp.config.json`](ldtmp.config.json), and an agent implementing the protocol SHOULD load every number from that file. Times are in milliseconds unless a unit is stated. Scores are real numbers clamped to the closed interval [0, 1].
 
 ## 2. Background and related work
 
 ### 2.1 Graduated self-disclosure
 
-Social penetration theory describes relationships as deepening through a gradual increase in the breadth and depth of what people disclose to each other (Altman & Taylor, 1973). Disclosure proceeds in layers, from public facts toward private values and feelings, and moving too fast tends to stall it. Aron et al. (1997) turned the idea into a procedure. Pairs of strangers who answered a sequence of questions that escalated in personal depth over 45 minutes reported greater closeness than pairs who held small talk for the same time. LDTMP adopts the same premise of ordered, escalating depth, and it adds explicit conditions for advancing and for retreating.
+Social penetration theory describes relationships as deepening through a gradual increase in the breadth and depth of what people disclose to each other (Altman & Taylor, 1973). Disclosure proceeds in layers, from public facts toward private values and feelings. Aron et al. (1997) turned the idea into a procedure. Pairs of strangers who took turns answering questions that escalated in personal depth over 45 minutes reported greater closeness than pairs who held small talk for the same time. LDTMP adopts the premise that depth should increase in a fixed order. It also adds explicit conditions for advancing and for retreating. Its interviewer does not disclose in return, so it drops the reciprocity of the original procedure.
 
 ### 2.2 Pacing in narrative and motivational practice
 
-Narrative practice treats the stories people tell about their experiences as material to explore and re-author, and it moves from the account of events toward their meaning (White & Epston, 1990). Motivational interviewing emphasizes following the person's lead, evoking their own perspective and adjusting pace to their readiness (Miller & Rollnick, 2013). LDTMP borrows the pacing discipline from both traditions. Their clinical aims are out of scope. Its descent from the peak through a relief layer to a forward-looking close reflects the shared view that a conversation which reaches difficult material should not end there.
+Narrative practice treats the stories people tell about their lives as open to re-authoring, and it attends to experiences that the dominant story leaves out (White & Epston, 1990). Motivational interviewing describes a guiding style that evokes the person's own reasons and adjusts to their readiness for change (Miller & Rollnick, 2013). LDTMP takes from both traditions the practice of building each question on what the person has just said. Their clinical aims are out of scope. LDTMP's climb back from the peak through a relief layer to a forward-looking close rests on a design premise of mine, that a conversation which reaches difficult material should not end there.
 
 ### 2.3 Behavioral signals of engagement
 
-The signals LDTMP measures have established links to conversational state. Speakers use fillers such as "uh" and "um" to signal anticipated delays in speech planning (Clark & Fox Tree, 2002). Listeners read response latency and filled pauses as cues to how confident a speaker is in an answer (Brennan & Williams, 1995). The degree to which participants match each other's function-word style predicts cohesiveness and performance in small groups (Gonzales et al., 2010). Turn-taking follows a systematic organization that makes timing between turns meaningful (Sacks et al., 1974). Emotional state can be described along valence and arousal dimensions (Russell, 1980).
+Listeners use response latency and filled pauses to judge whether a speaker knows the answer to a question, and a long delay before an answer lowers that judgment (Brennan & Williams, 1995). That finding motivates LDTMP's use of latency as a signal, though it concerns knowledge and the protocol uses latency for engagement. Speakers also use "uh" and "um" to announce a minor or a major delay in speaking (Clark & Fox Tree, 2002). Filler counts and the timing of turns (Sacks et al., 1974) are natural inputs for the voice extension described in Section 6.4.
 
-LDTMP turns these ideas into simple heuristics such as word counts, latency bands, unique-word ratios and emotion-marker counts. None of the cited studies validated those heuristics, and Section 6.2 treats the gap as a limitation.
+The protocol's other measures, such as word counts, unique-word ratios, emotion-marker counts and trend flags across the session, are engineering heuristics of mine. No cited study validated them, and Section 6.2 treats the gap as a limitation.
 
 ### 2.4 Agreement bias in language models
 
-Language models trained with human feedback show sycophancy, a tendency to tell users what they appear to want to hear. Human preference judgments themselves favor such responses some of the time (Sharma et al., 2023). The bias matters for depth control. A model asked whether a person is ready for a more personal question receives a prompt that already frames depth as the goal, and agreement is the likeliest answer. LDTMP removes that judgment from the model entirely. This is its central design choice.
+Language models trained with human feedback show sycophancy, a tendency to tell users what they appear to want to hear. Human preference judgments themselves favor such responses some of the time (Sharma et al., 2023). The bias matters for depth control. A model asked whether a person is ready for a more personal question receives a prompt that already frames depth as the goal. I expect agreement to be the likely answer, though Sharma et al. did not test this kind of judgment, so the risk is an extrapolation. LDTMP takes that judgment away from the model. A model may still help measure the signals, for example by counting emotional statements, but it never decides the layer. This is the protocol's central design choice.
 
 ## 3. The protocol
 
@@ -69,9 +69,9 @@ Language models trained with human feedback show sycophancy, a tendency to tell 
 
 **P1. Deterministic layer decisions.** The layer decision is a pure function of measured signals and session state. It runs before generation, and its output becomes part of the prompt.
 
-**P2. Layers constrain by exclusion.** Each layer lists topics to avoid, a word range for the question and an emotional intensity. Those boundaries leave the model free to respond to what the person said.
+**P2. Layers constrain by explicit lists.** Each layer lists recommended topics, topics to avoid, a word range for the question and an emotional intensity. Those boundaries leave the model free to respond to what the person said.
 
-**P3. Asymmetric transitions.** Moving deeper requires time in the current layer, sustained engagement and evidence of depth, and it can only advance one layer at a time. Moving back toward a lighter layer requires one strong disengagement signal and can jump any number of layers.
+**P3. Asymmetric transitions.** Moving deeper requires time in the current layer, sustained engagement and evidence of depth, and it can only advance one layer at a time. Moving back toward a lighter layer needs only a disengagement signal and a weak answer, and each retreat steps back one layer. After the peak, disengagement moves the session toward the close and never back into heavier material.
 
 **P4. Every decision carries its reasons.** The layer decision returns the inputs it used, the rule that fired and a confidence value. That record lets a person audit a session after the fact, and it gives an evaluation harness something to assert against.
 
@@ -90,20 +90,20 @@ The layers form an arc that rises and comes back down. The sequence order in Tab
 | 4 | `RELIEF_ARC` | moderate | Turn toward perspective, strength and what was learned. |
 | 5 | `REENTRY` | light | Close the conversation and look forward. |
 
-The "tension modulation" in the protocol's name refers to this shape. Tension rises through layers 0 to 3 and resolves through layers 4 and 5. The protocol treats the resolution as mandatory. A conversation that reaches layer 3 and stops there leaves the person at the heaviest point of the session.
+The "tension modulation" in the protocol's name refers to this shape. Tension rises through layers 0 to 3 and resolves through layers 4 and 5. The rules are built so that the arc resolves. After the peak, no rule leads back into heavier material, because a conversation that stops at layer 3 leaves the person at the heaviest point of the session. Section 4.3 shows that a session can still stay at the peak.
 
-Figure 1 shows the arc as a state machine. Forward moves advance one layer at a time, and the safety gate covers the three moves before the peak. Each retreat rule in Table 4 steps back one layer, and the structural rule in Section 3.6.2 also permits longer backward jumps.
+Figure 1 shows the arc as a state machine. Forward moves advance one layer at a time, and the safety gate covers the three moves before the peak. Each retreat rule in Table 4 steps back one layer, and only the three layers up to the peak have one.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="figures/fig1-layer-arc-dark.svg">
-  <img src="figures/fig1-layer-arc-light.svg" width="100%" alt="The six LDTMP layers placed by emotional intensity. Icebreaker and Surface sit at light intensity, Initial descent at moderate, Emotional saturation at deep, Relief arc at moderate and Reentry at light. A forward arrow links each layer to the next. The safety gate covers the three forward moves into Surface, Initial descent and Emotional saturation. A dashed retreat arrow leads from each layer after Icebreaker back to the layer before it.">
+  <img src="figures/fig1-layer-arc-light.svg" width="100%" alt="The six LDTMP layers placed by emotional intensity. Icebreaker and Surface sit at light intensity, Initial descent at moderate, Emotional saturation at deep, Relief arc at moderate and Reentry at light. A forward arrow links each layer to the next. The safety gate covers the three forward moves into Surface, Initial descent and Emotional saturation. Dashed retreat arrows lead from Surface, Initial descent and Emotional saturation back one layer. After the peak there are no retreats, and disengagement moves the session toward Reentry.">
 </picture>
 
 **Figure 1.** The six layers placed by emotional intensity, so the descent to the peak and the climb back out are visible. Thick blue arrows are forward moves that the safety gate covers, thin gray arrows are ungated forward moves, and dashed arrows are retreats.
 
 ### 3.3 Generation constraints per layer
 
-The orchestrator passes the constraints in Table 2 to the model with every generation request. The word range applies to the generated question.
+The orchestrator passes the constraints in Table 2 to the model with every generation request. The word range applies to the generated question. Table 2 abridges the topic lists, and the configuration file holds them in full.
 
 **Table 2.** Generation constraints that the orchestrator passes to the model for each layer.
 
@@ -116,17 +116,17 @@ The orchestrator passes the constraints in Table 2 to the model with every gener
 | `RELIEF_ARC` | 12 to 20 | resilience, lessons learned, strength discovered, perspective gained | reopening fresh wounds, minimizing pain, forced positivity | Supportive and balanced. Acknowledge the difficulty without minimizing it. |
 | `REENTRY` | 10 to 18 | future outlook, next steps, integration, grounding | deep emotional topics, unresolved issues, heavy subjects | Warm and grounding. One forward-looking question. |
 
-Every layer shares these generation rules. The model MUST ask exactly one question. The question MUST be open-ended and SHOULD build on a specific detail from the person's last answer. The model MUST NOT use clinical or therapeutic vocabulary, and it MUST NOT ask again about an emotion the person has already named.
+Every layer shares these generation rules, and the implementation MUST include them in the prompt. The model asks exactly one open-ended question and builds it on a specific detail from the person's last answer where it can. It avoids clinical or therapeutic vocabulary, and it never asks again about an emotion the person has already named.
 
 An implementation SHOULD validate each generated question against its layer. Checking word count and matching keywords against the avoid list is enough for a first version, and a failed check triggers one regeneration.
 
 ### 3.4 Signals
 
-LDTMP reads three kinds of evidence from each user turn. A text-only implementation can compute all of them. A voice implementation can add prosody, though no rule in this specification depends on it.
+LDTMP computes its signals from three sources: the latest response, the rolling history of responses, and elapsed time. A text-only implementation can compute all of them. In a text interface, latency runs from showing the question to receiving the answer, and the stage directions of Section 3.4.5 count as zero. A voice implementation can add prosody, though no rule in this specification depends on it.
 
 #### 3.4.1 Per-response measurements
 
-For each user response the implementation records the word count, the latency in seconds between the end of the question and the start of the answer, the number of unique words, and a count of emotional statements. An emotional statement is a sentence that expresses a feeling, fear, aspiration or value. An LLM extraction pass can produce that count in any language, and a keyword list is an acceptable fallback. The implementation keeps a rolling history of these measurements for the session.
+For each user response the implementation records the word count, the latency in seconds between the end of the question and the start of the answer, the number of unique words, and a count of emotional statements. An emotional statement is a sentence that expresses a feeling, fear, aspiration or value. An LLM extraction pass can produce that count in any language, and a keyword list is an acceptable fallback. The implementation keeps a rolling history of the last 20 responses in the session.
 
 #### 3.4.2 Engagement score
 
@@ -190,7 +190,7 @@ The marker list is language-specific, and implementations SHOULD supply one per 
 
 #### 3.4.6 Rhythm and the intervention flag
 
-Conversations tend to lose energy in cycles of a few minutes. The implementation tracks minutes since the last intervention, where an intervention is any deliberate change of approach such as a topic shift, a lighter question or a short reflection. A **natural cycle point** occurs at 3 minutes and a **fatigue cycle point** at 6 minutes.
+The protocol assumes that conversations lose energy in cycles of a few minutes, an assumption I have not tested. The implementation tracks minutes since the last intervention, where an intervention is any deliberate change of approach such as a topic shift, a lighter question or a short reflection. A **natural cycle point** occurs at 3 minutes and a **fatigue cycle point** at 6 minutes.
 
 The `should_intervene` flag is true when any of these holds:
 
@@ -228,7 +228,7 @@ safety = 1.0
 safety = clamp(safety, 0, 1)
 ```
 
-The safety threshold is 0.5. Implementations MAY make it configurable.
+The safety threshold is 0.5. Implementations MAY make it configurable. Implementations MUST round the safety score to two decimal places before comparing it with the threshold. Every safety term is a multiple of 0.1, so rounding is exact, and it stops the order of floating-point subtraction from moving a score of exactly 0.5 below the threshold.
 
 ### 3.6 The layer decision
 
@@ -278,16 +278,16 @@ The controller evaluates the rules for the current layer in the order listed in 
 | `EMOTIONAL_SATURATION` | `E ≤ MODERATE` and (`Q = minimal` or `D < 0.3`) | `INITIAL_DESCENT` | 0.80 |
 | `EMOTIONAL_SATURATION` | no match: stay | | 0.85 |
 | `RELIEF_ARC` | `t > 60 s` and `E ≥ MODERATE` | `REENTRY` | 0.85 |
-| `RELIEF_ARC` | `E = DISENGAGED` and `Q = minimal` | `EMOTIONAL_SATURATION` | 0.75 |
+| `RELIEF_ARC` | `E = DISENGAGED` and `Q = minimal` | `REENTRY` | 0.75 |
 | `RELIEF_ARC` | no match: stay | | 0.80 |
-| `REENTRY` | `E = DISENGAGED` and `Q = minimal` | `RELIEF_ARC` | 0.80 |
+| `REENTRY` | `E = DISENGAGED` and `Q = minimal`: stay and offer to end the session | | 0.80 |
 | `REENTRY` | no match: stay | | 0.95 |
 
-Two structural rules apply on top of the table. A forward transition MUST advance exactly one layer, and the fast track from `ICEBREAKER` to `SURFACE` counts as one layer. A backward transition MAY move to any earlier layer.
+Every transition in Table 4 moves exactly one layer, forward or back. After the peak, the session moves only toward `REENTRY`. Because `exchange_count` is session-wide, a session that retreats to `ICEBREAKER` meets the exchange cap at once, and only the safety gate can hold it there.
 
 #### 3.6.3 The safety gate
 
-The safety gate applies to every **descending** transition. A descending transition is any forward move before the peak, so its target is `SURFACE`, `INITIAL_DESCENT` or `EMOTIONAL_SATURATION`. The move into `SURFACE` keeps the same light intensity, and the gate covers it because leaving the icebreaker before the person has warmed up at all wastes the rapport phase. When the safety score is below the threshold, the gate vetoes the transition, the session stays in its current layer, and the decision reports confidence 0.90.
+The safety gate applies to every **descending** transition. A descending transition moves deeper into the arc. A descending transition is any forward move before the peak, so its target is `SURFACE`, `INITIAL_DESCENT` or `EMOTIONAL_SATURATION`. The move into `SURFACE` keeps the same light intensity, and the gate covers it because leaving the icebreaker before the person has warmed up at all wastes the rapport phase. When the safety score is below the threshold, the gate vetoes the transition, the session stays in its current layer, and the decision reports confidence 0.90.
 
 The gate MUST NOT apply to moves into `RELIEF_ARC` or `REENTRY`. Those moves come after the peak and reduce intensity, and blocking them would hold a struggling person at the heaviest point of the conversation. The gate also never applies to backward transitions.
 
@@ -322,21 +322,21 @@ The orchestrator updates session state when `should_transition` is true by reset
 
 **Proposition 1.** With signals derived as in Section 3.4, the safety gate can veto only the exchange-cap transition out of `ICEBREAKER`.
 
-*Proof.* Every descending rule other than the exchange cap requires `E ≥ MODERATE`. A person at that level carries none of the level penalties for `DISENGAGED` or `SHOWING_FATIGUE`. They also carry neither the straight-line penalty nor the fatigue-trend penalty, because each of those signals forces the level below `MODERATE` (Table 3). The only penalties left are low readiness (0.2) and the intervention flag (0.3). Together they reduce the safety score from 1.0 to 0.5 at most. The gate vetoes only when the score is strictly below 0.5, so it never fires on these rules. The exchange cap has no engagement condition, so a fatigued or disengaged person can reach it with a safety score below 0.5. ∎
+*Proof.* Every descending rule other than the exchange cap requires `E ≥ MODERATE`. A person at that level carries none of the level penalties for `DISENGAGED` or `SHOWING_FATIGUE`. They also carry neither the straight-line penalty nor the fatigue-trend penalty, because each of those signals forces the level below `MODERATE` (Table 3). The only penalties left are low readiness (0.2) and the intervention flag (0.3). Together they leave the safety score at 0.5 or above. The gate vetoes only when the score is strictly below 0.5, so it never fires on these rules. The exchange cap has no engagement condition, so a fatigued or disengaged person can reach it with a safety score below 0.5. ∎
 
-The gate stays useful because it is independent of the transition rules. It keeps working when an implementation sources engagement differently, for example from a model's judgment or from voice prosody. It also keeps working when someone later retunes the thresholds and breaks the coupling that the proof relies on.
+The gate stays useful as a separate check. The proof relies on how Section 3.4 derives engagement, and the gate does not. It keeps protecting the person when an implementation sources engagement differently, for example from a model's judgment or from voice prosody, and when someone later retunes the thresholds and breaks the coupling that the proof relies on.
 
 ### 4.2 Reachability of every layer
 
-Every forward transition can fire on signals alone. The rule that leaves `EMOTIONAL_SATURATION` needs a depth score of at least 0.8, which a `deep` response provides, together with `HIGHLY_ENGAGED`, which Example A shows is attainable. The other forward rules have lower thresholds. A conformance suite should drive a synthetic session from `ICEBREAKER` to `REENTRY` to confirm this in any implementation.
+Every forward transition can fire on signals alone. Topic depth takes only the values 0.2, 0.5 and 0.8, so the thresholds of 0.6 and 0.8 both require a `deep` response, which a single answer of more than 40 words with one emotional statement provides. The same two rules need `HIGHLY_ENGAGED`, which Example A shows is attainable. The rule out of `SURFACE` needs only a `moderate` response. A conformance suite should drive a synthetic session from `ICEBREAKER` to `REENTRY` to confirm this in any implementation.
 
 ### 4.3 Retention in the peak layer
 
-The rules permit a session to stay in `EMOTIONAL_SATURATION` indefinitely. A person at rank 3 (`ENGAGED`) who gives detailed answers satisfies neither the forward rule, which needs rank 4, nor the retreat rule, which needs rank 2 or below. Section 6.2 lists this as a limitation and recommends a session-level time budget.
+The rules permit a session to stay in `EMOTIONAL_SATURATION` indefinitely. A person at rank 3 (`ENGAGED`) satisfies neither the forward rule, which needs rank 4, nor the retreat rule, which needs rank 2 or below, whatever they say. A `HIGHLY_ENGAGED` person whose answers stay at moderate depth also matches neither rule. Section 6.2 lists this as a limitation and recommends a session-level time budget.
 
 ## 5. Worked examples
 
-Each example computes the signals from Section 3.4 and then applies Sections 3.5 and 3.6. The arithmetic is shown so that implementations can use these examples as test vectors.
+Each example computes the signals from Section 3.4 and then applies Sections 3.5 and 3.6. The arithmetic is shown so that implementations can check against it. The examples state aggregate inputs, such as average latency, so they test the formulas from Section 3.4.2 onward.
 
 ### 5.1 Example A: fast track out of the icebreaker
 
@@ -371,7 +371,7 @@ The next question comes from the `SURFACE` constraints: 10 to 25 words, light in
 
 ### 5.2 Example B: the safety gate overrides the exchange cap
 
-The session is in `ICEBREAKER` with `exchange_count = 2`. The person's three answers so far ran 4, 3 and 2 words, with an average latency of 20 seconds, an average of 3 unique words and no emotional statements. Trend flags need four responses, so all three are false.
+The session is in `ICEBREAKER` with `exchange_count = 2`. The person's three answers so far ran 4, 3 and 2 words, with an average latency of 20 seconds, an average of 3 unique words, no emotional statements and no emotion markers. Trend flags need four responses, so all three are false.
 
 ```
 engagement = 0.2 + 0 (avg 3 words) + 0.10 (20 s) + 0.2 * (3/20) + 0
@@ -402,7 +402,7 @@ The cap matches again on every later turn, and the gate keeps vetoing it until t
 
 ### 5.3 Example C: retreat from the peak layer
 
-The session has been in `EMOTIONAL_SATURATION` for 90 seconds. Across the history the person averages 20 words per answer, 20 seconds of latency, 14 unique words and one emotional statement. The latest answer has 7 words and no emotion markers. No trend flag is set. The session is past four minutes and the last intervention was more than 3 minutes ago, so a natural cycle point has been reached.
+The session has been in `EMOTIONAL_SATURATION` for 90 seconds. Across the history the person averages 20 words per answer, 20 seconds of latency, 14 unique words and one emotional statement. The latest answer has 7 words, no emotional statement and no emotion markers. No trend flag is set. The last intervention was 4 minutes ago, so the session has reached a natural cycle point and not yet a fatigue cycle point.
 
 ```
 engagement = 0.2 + 0.10 (20 words) + 0.10 (20 s) + 0.2 * (14/20) + 0.1 * (1/3)
@@ -436,42 +436,44 @@ The next question comes from the `INITIAL_DESCENT` constraints, which means mode
 
 ### 6.1 Defects in the first implementation
 
-The first production implementation of LDTMP contained three defects. Each one passed code review, because every line of the code read correctly when someone looked at it alone. This section records them so that new implementations can test for them directly.
+The first production implementation of LDTMP contained three defects, and all three ran in production. This section records them so that new implementations can test for them directly.
 
 **Ordinal comparison on string labels.** That implementation stored engagement levels as string constants and compared them with `>=`. String comparison is alphabetical, so `"highly_engaged" >= "moderate"` evaluated false and `"showing_fatigue" >= "moderate"` evaluated true. Engaged people were held back while fatigued people advanced. A conformance test should assert that every rule using `E ≥ MODERATE` passes for `ENGAGED` and `HIGHLY_ENGAGED` and fails for `SHOWING_FATIGUE`.
 
-**A quantized score against a strict threshold.** Topic depth maps to at most 0.8, and the first implementation required depth `> 0.8` to leave `EMOTIONAL_SATURATION` forward. That rule could never fire. This specification uses `≥` for depth thresholds, and Section 4.2 shows that every forward transition is reachable as a result.
+**A quantized score against a strict threshold.** Topic depth maps to at most 0.8, and the first implementation required depth `> 0.8` to leave `EMOTIONAL_SATURATION` forward. That rule could never fire. This specification uses `≥` for depth thresholds, and Section 4.2 argues that every forward transition is reachable as a result.
 
 **A gate keyed to sequence position.** The first implementation decided whether a move "goes deeper" by comparing positions in the layer list. Moves into `RELIEF_ARC` and `REENTRY` sit later in the list, so it gated them too, and a struggling person could be held at the emotional peak. Section 3.6.3 keys the gate to descent.
 
-All three defects share a cause. Each rule looked right in isolation, and only an end-to-end test of the decision function under realistic signals would have exposed it. The worked examples in Section 5 exist partly for that reason.
+Each rule looked right in isolation. A test that runs the decision function on realistic signals catches all three, and the worked examples in Section 5 exist partly for that reason.
+
+The first implementation also made one design choice that this specification reverses. It sent a disengaged person from `RELIEF_ARC` back to `EMOTIONAL_SATURATION`, and from `REENTRY` back to `RELIEF_ARC`, and both moves raise intensity while the gate never sees backward moves. Disengagement after the peak now moves the session toward the close.
 
 ### 6.2 Limitations
 
-- **No empirical evaluation.** Nobody has measured LDTMP against a baseline, for example a model prompted to manage depth by itself, on outcomes such as disclosure depth, session completion or the person's own rating of the conversation. The protocol's benefits are argued from design here, and none of them has been demonstrated.
-- **Hand-tuned constants.** Nobody has calibrated the thresholds against labeled conversations, so they are starting values.
+- **No conclusive evaluation.** In December 2025 I ran an internal benchmark that compared the production system with general-purpose models and a fixed-question baseline, using simulated interviewees and LLM judges. The production system ranked first in some runs and close to the fixed-question baseline in others. That system still contained the defects in Section 6.1, its benchmark sessions started at `SURFACE` and skipped the icebreaker, it bundled the controller with memory and retrieval features, and nobody calibrated the judges against human ratings. I treat the result as inconclusive. The protocol's benefits are argued from design here, and none of them has been demonstrated.
+- **Hand-tuned constants.** I have not calibrated the thresholds against labeled conversations, so they are starting values.
 - **Signal bias.** The engagement score rewards long, fast answers. A person who is terse by habit or culture scores lower without being less engaged. A per-person baseline learned over the first few exchanges would correct for that.
 - **Retention in the peak layer.** As Section 4.3 shows, a session can stay in `EMOTIONAL_SATURATION` indefinitely. Implementations SHOULD add a session-level time budget that forces a move to `RELIEF_ARC`.
 - **No safety-critical function.** The protocol says nothing about crisis content, and Section 1.1 states that limit.
 
 ### 6.3 Adapting LDTMP to other domains
 
-The controller stays the same across domains, and an adaptation changes only the layer content.
+An adaptation changes the layer content and the timing, and it keeps the decision mechanics.
 
 1. The adapter rewrites the recommended topics and avoid lists in Table 2 for the domain. A practice job interview might run from background questions in `SURFACE` to a failure story in `EMOTIONAL_SATURATION` to lessons learned in `RELIEF_ARC`.
 2. The six-layer arc stays intact. Every adaptation keeps the climb back to light intensity at the end.
 3. The time thresholds scale with the expected session length, so a shorter session needs shorter minimum times per layer.
 4. The safety gate stays, and so does the rule that descent advances one layer at a time.
 
-The engagement signals also work after the fact. An open-source meeting-analysis toolkit, [meeting-debrief](https://github.com/amilovidov/meeting-debrief), applies the same measurements to recorded audio and reports how a meeting or interview went.
+Several of the engagement signals can also be computed after the fact. An open-source meeting-analysis toolkit, [meeting-debrief](https://github.com/amilovidov/meeting-debrief), applies response latency and vocabulary diversity, among other measures, to recorded audio. I have not validated those measures in that setting either.
 
 ### 6.4 Future work
 
-Three directions follow from the limitations. The first is a controlled comparison between LDTMP and a model-managed baseline. That study would use human ratings and disclosure measures adapted from the closeness literature (Aron et al., 1997). The second is calibration of the thresholds and per-person baselines on labeled transcripts. The third is a voice extension that adds pitch, energy and pause structure to the engagement score. That work would also check whether Proposition 1 still holds.
+Three directions follow from the limitations. The first is a rerun of the internal benchmark with a controller that conforms to this specification, judges calibrated against human ratings, and a model-managed baseline. Disclosure measures adapted from the closeness literature (Aron et al., 1997) would add a human-rated outcome. The second is calibration of the thresholds and per-person baselines on labeled transcripts. The third is a voice extension that adds pitch, energy and pause structure to the engagement score. That work would also check whether Proposition 1 still holds.
 
 ## 7. Conclusion
 
-LDTMP gives a language-model interviewer an explicit, auditable notion of conversational depth. A six-layer arc, deterministic transition rules and an independent safety gate decide how personal the conversation becomes, and the model decides only how to phrase the next question. The specification is complete enough to implement from this report and its configuration file, and the worked examples allow an implementation to check itself. Whether the protocol produces better conversations than a model left to its own judgment is an empirical question that this report leaves open.
+LDTMP gives a language-model interviewer an explicit, auditable account of how deep a conversation goes, and the model decides only how to phrase the next question. Whether the protocol produces better conversations than a model left to its own judgment is an empirical question that this report leaves open.
 
 ## References
 
@@ -483,11 +485,7 @@ Brennan, S. E., & Williams, M. (1995). The feeling of another's knowing: Prosody
 
 Clark, H. H., & Fox Tree, J. E. (2002). Using uh and um in spontaneous speaking. *Cognition, 84*(1), 73-111. https://doi.org/10.1016/S0010-0277(02)00017-3
 
-Gonzales, A. L., Hancock, J. T., & Pennebaker, J. W. (2010). Language style matching as a predictor of social dynamics in small groups. *Communication Research, 37*(1), 3-19. https://doi.org/10.1177/0093650209351468
-
 Miller, W. R., & Rollnick, S. (2013). *Motivational interviewing: Helping people change* (3rd ed.). Guilford Press. ISBN 978-1-60918-227-4
-
-Russell, J. A. (1980). A circumplex model of affect. *Journal of Personality and Social Psychology, 39*(6), 1161-1178. https://doi.org/10.1037/h0077714
 
 Sacks, H., Schegloff, E. A., & Jefferson, G. (1974). A simplest systematics for the organization of turn-taking for conversation. *Language, 50*(4), 696-735. https://doi.org/10.2307/412243
 

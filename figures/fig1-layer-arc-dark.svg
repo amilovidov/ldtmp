@@ -13,9 +13,7 @@
 <path d="M688.0,175 C782,175 782,175 782,253.0" fill="none" stroke="#79a8ec" stroke-width="2.2" marker-end="url(#a-gated)"/>
 <path d="M718.0,280 C624,280 624,280 624,202.0" fill="none" stroke="#656c76" stroke-width="1.3" stroke-dasharray="5 4" marker-end="url(#a-retreat)"/>
 <path d="M894.0,280 C988,280 988,280 988,202.0" fill="none" stroke="#9198a1" stroke-width="1.6" marker-end="url(#a-forward)"/>
-<path d="M924.0,175 C830,175 830,175 830,253.0" fill="none" stroke="#656c76" stroke-width="1.3" stroke-dasharray="5 4" marker-end="url(#a-retreat)"/>
 <path d="M1100.0,175 C1194,175 1194,175 1194,97.0" fill="none" stroke="#9198a1" stroke-width="1.6" marker-end="url(#a-forward)"/>
-<path d="M1130.0,70 C1036,70 1036,70 1036,148.0" fill="none" stroke="#656c76" stroke-width="1.3" stroke-dasharray="5 4" marker-end="url(#a-retreat)"/>
 <rect x="100.0" y="47.0" width="176" height="46" rx="21" fill="#1a2636" stroke="#3d5a80" stroke-width="1"/>
 <text x="188" y="70" font-size="16" font-weight="500" text-anchor="middle" dominant-baseline="central" fill="#e6edf3">Icebreaker</text>
 <rect x="306.0" y="47.0" width="176" height="46" rx="21" fill="#1a2636" stroke="#3d5a80" stroke-width="1"/>
