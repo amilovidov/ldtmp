@@ -95,22 +95,33 @@ The "tension modulation" in the protocol's name refers to this shape. Tension ri
 Figure 1 shows the arc as a state machine. Forward moves advance one layer at a time, and the safety gate covers the three moves before the peak. Each retreat rule in Table 4 steps back one layer, and the structural rule in Section 3.6.2 also permits longer backward jumps.
 
 ```mermaid
-stateDiagram-v2
-    direction LR
-    [*] --> ICEBREAKER
-    ICEBREAKER --> SURFACE: forward, gated
-    SURFACE --> INITIAL_DESCENT: forward, gated
-    INITIAL_DESCENT --> EMOTIONAL_SATURATION: forward, gated
-    EMOTIONAL_SATURATION --> RELIEF_ARC: forward
-    RELIEF_ARC --> REENTRY: forward
-    SURFACE --> ICEBREAKER: retreat
-    INITIAL_DESCENT --> SURFACE: retreat
-    EMOTIONAL_SATURATION --> INITIAL_DESCENT: retreat
-    RELIEF_ARC --> EMOTIONAL_SATURATION: retreat
-    REENTRY --> RELIEF_ARC: retreat
+%%{init: {"theme": "base", "themeVariables": {"fontFamily": "Helvetica Neue, Helvetica, Arial, sans-serif", "fontSize": "14px", "lineColor": "#7d8590", "primaryTextColor": "#1f2328"}, "flowchart": {"curve": "basis", "nodeSpacing": 28, "rankSpacing": 46}}}%%
+flowchart LR
+    I([Icebreaker]):::light
+    S([Surface]):::light
+    D([Initial descent]):::moderate
+    E([Emotional saturation]):::deep
+    R([Relief arc]):::moderate
+    N([Reentry]):::light
+
+    I ==> S ==> D ==> E
+    E --> R --> N
+
+    S -.-> I
+    D -.-> S
+    E -.-> D
+    R -.-> E
+    N -.-> R
+
+    classDef light fill:#eef3fb,stroke:#9fb3d1,stroke-width:1px,color:#1f2328
+    classDef moderate fill:#c7d6ee,stroke:#6f8fbf,stroke-width:1px,color:#1f2328
+    classDef deep fill:#3d5f99,stroke:#2b4775,stroke-width:1px,color:#ffffff
+    linkStyle 0,1,2 stroke:#3d5f99,stroke-width:2.5px
+    linkStyle 3,4 stroke:#7d8590,stroke-width:1.5px
+    linkStyle 5,6,7,8,9 stroke:#8b949e,stroke-width:1.2px
 ```
 
-**Figure 1.** The six layers as a state machine, with forward moves, retreat moves and the three transitions the safety gate covers.
+**Figure 1.** The six layers as a state machine. Shading encodes emotional intensity from light to deep. Thick arrows are forward moves that the safety gate covers, thin arrows are ungated forward moves, and dotted arrows are retreats.
 
 ### 3.3 Generation constraints per layer
 
@@ -248,28 +259,46 @@ The orchestrator calls the layer decision once per user turn, after it has compu
 Figure 2 traces one turn through the protocol. The controller settles the layer before the model writes anything, and the model's output is checked against that layer before the person sees it.
 
 ```mermaid
-flowchart TD
-    A[User response] --> B[Compute signals, Section 3.4]
-    B --> C[Readiness and safety scores, Section 3.5]
-    C --> D{Transition rule matches? Table 4}
-    D -- no --> S[Stay in current layer]
-    D -- yes --> E{Descending move?}
-    E -- no --> T[Transition to target layer]
-    E -- yes --> F{Safety below 0.5?}
-    F -- yes --> V[Veto: stay in current layer]
-    F -- no --> T
-    S --> G[Update session state, exchange_count + 1]
-    V --> G
-    T --> G
-    G --> H[Build prompt with the layer constraints, Table 2]
-    H --> I[Model writes one question]
-    I --> J{Question fits the layer?}
-    J -- yes --> K[Ask the question]
-    J -- no --> R[Regenerate once]
-    R --> K
+%%{init: {"theme": "base", "themeVariables": {"fontFamily": "Helvetica Neue, Helvetica, Arial, sans-serif", "fontSize": "14px", "lineColor": "#8b949e", "primaryTextColor": "#1f2328", "textColor": "#1f2328", "clusterBkg": "transparent", "clusterBorder": "#8b949e", "titleColor": "#8b949e", "edgeLabelBackground": "#ffffff"}, "flowchart": {"curve": "basis", "nodeSpacing": 34, "rankSpacing": 34, "padding": 14}}}%%
+flowchart TB
+    U([User response]):::io
+
+    subgraph C [Controller, deterministic]
+        direction LR
+        S1[Signals and scores]:::step
+        S2{Rule fires?}:::choice
+        S3{Descending and<br/>safety below 0.5?}:::choice
+        L[Layer for this turn]:::layer
+        S1 --> S2
+        S2 -- yes --> S3
+        S2 -- no, stay --> L
+        S3 -- yes, veto --> L
+        S3 -- no, move --> L
+    end
+
+    subgraph G [Model, generative]
+        direction LR
+        P[Prompt]:::step
+        W[Write one question]:::model
+        V{Fits the layer?}:::choice
+        P --> W --> V
+        V -- no, regenerate once --> W
+    end
+
+    Q([Question to user]):::io
+
+    U --> C
+    C -- layer constraints --> G
+    G -- question passes --> Q
+
+    classDef io fill:#ffffff,stroke:#8b949e,stroke-width:1px,color:#1f2328
+    classDef step fill:#eef3fb,stroke:#9fb3d1,stroke-width:1px,color:#1f2328
+    classDef choice fill:#eef3fb,stroke:#6f8fbf,stroke-width:1px,color:#1f2328
+    classDef layer fill:#c7d6ee,stroke:#6f8fbf,stroke-width:1px,color:#1f2328
+    classDef model fill:#3d5f99,stroke:#2b4775,stroke-width:1px,color:#ffffff
 ```
 
-**Figure 2.** One turn of the protocol, from the user's response through the layer decision and safety gate to question generation and validation.
+**Figure 2.** One turn of the protocol. The deterministic controller settles the layer, and the model then writes and validates a question inside that layer's constraints.
 
 #### 3.6.1 Session state
 
